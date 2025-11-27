@@ -11,11 +11,28 @@ _Changes in the next release_
 
 ---
 
-## v0.3.1 - 2024-05-14
+## v0.4.0 - 2025-11-24
+### Breaking Changes
+- A WebSocket disconnection no longer emits the `DISCONNECT` event, but the new `CLIENT_DISCONNECTED` event ([#35](https://github.com/unfoldedcircle/integration-python-library/pull/35)).
+
+### Added
+- New `CLIENT_CONNECTED` event is emitted when a WebSocket client connects ([#35](https://github.com/unfoldedcircle/integration-python-library/pull/35)).
+- WebSocket client identification in disconnect log statements.
+
+### Fixed
+- Null reference exception in log filter ([#33](https://github.com/unfoldedcircle/integration-python-library/pull/33)).
+- Set changed size during iteration for WS broadcast ([#36](https://github.com/unfoldedcircle/integration-python-library/pull/36)).
+
+## v0.3.2 - 2025-09-17
+### Changed
+- Add support for IR Emitter EntityType ([#31](https://github.com/unfoldedcircle/integration-python-library/pull/31)).
+- Add stop, record and menu for remote entity buttons ([#32](https://github.com/unfoldedcircle/integration-python-library/pull/32)).
+
+## v0.3.1 - 2025-05-14
 ### Fixed
 - Filtered log messages may not modify original data. This sporadically removed media artwork URLs ([#27](https://github.com/unfoldedcircle/integration-python-library/pull/27)).
 
-## v0.3.0 - 2024-04-25
+## v0.3.0 - 2025-04-25
 ### Added
 - New media-player attribute MEDIA_POSITION_UPDATED_AT ([feature-and-bug-tracker#443](https://github.com/unfoldedcircle/feature-and-bug-tracker/issues/443)).
 ### Changed

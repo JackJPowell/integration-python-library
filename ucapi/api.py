@@ -162,24 +162,35 @@ class IntegrationAPI:
             # authenticate on connection
             await self._authenticate(websocket, True)
 
+            self._events.emit(uc.Events.CLIENT_CONNECTED)
+
             async for message in websocket:
                 # process message
                 await self._process_ws_message(websocket, message)
 
         except ConnectionClosedOK:
-            _LOG.info("WS: Connection closed")
+            _LOG.info("[%s] WS: Connection closed", websocket.remote_address)
 
         except websockets.exceptions.ConnectionClosedError as e:
             # no idea why they made code & reason deprecated...
-            _LOG.info("WS: Connection closed with error %d: %s", e.code, e.reason)
+            _LOG.info(
+                "[%s] WS: Connection closed with error %d: %s",
+                websocket.remote_address,
+                e.code,
+                e.reason,
+            )
 
         except websockets.exceptions.WebSocketException as e:
-            _LOG.error("WS: Connection closed due to processing error: %s", e)
+            _LOG.error(
+                "[%s] WS: Connection closed due to processing error: %s",
+                websocket.remote_address,
+                e,
+            )
 
         finally:
             self._clients.remove(websocket)
-            _LOG.info("WS: Client removed")
-            self._events.emit(uc.Events.DISCONNECT)
+            _LOG.info("[%s] WS: Client removed", websocket.remote_address)
+            self._events.emit(uc.Events.CLIENT_DISCONNECTED)
 
     async def _send_ok_result(
         self, websocket, req_id: int, msg_data: dict[str, Any] | list | None = None
@@ -273,7 +284,7 @@ class IntegrationAPI:
         data = {"kind": "event", "msg": msg, "msg_data": msg_data, "cat": category}
         data_dump = json.dumps(data)
 
-        for websocket in self._clients:
+        for websocket in self._clients.copy():
             if _LOG.isEnabledFor(logging.DEBUG):
                 _LOG.debug(
                     "[%s] =>: %s", websocket.remote_address, filter_log_msg_data(data)
@@ -764,6 +775,11 @@ class IntegrationAPI:
     ##############
 
     @property
+    def client_count(self) -> int:
+        """Return number of WebSocket clients."""
+        return len(self._clients)
+
+    @property
     def device_state(self) -> uc.DeviceStates:
         """
         Return device state.
@@ -887,9 +903,12 @@ def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
         if (
             "attributes" in log_upd["msg_data"]
             and MediaAttr.MEDIA_IMAGE_URL in log_upd["msg_data"]["attributes"]
-            and log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
-                "data:"
+            and (
+                media_image_url := log_upd["msg_data"]["attributes"][
+                    MediaAttr.MEDIA_IMAGE_URL
+                ]
             )
+            and media_image_url.startswith("data:")
         ):
             log_upd["msg_data"]["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
         elif isinstance(log_upd["msg_data"], list):
@@ -897,9 +916,10 @@ def filter_log_msg_data(data: dict[str, Any]) -> dict[str, Any]:
                 if (
                     "attributes" in item
                     and MediaAttr.MEDIA_IMAGE_URL in item["attributes"]
-                    and item["attributes"][MediaAttr.MEDIA_IMAGE_URL].startswith(
-                        "data:"
+                    and (
+                        media_image_url := item["attributes"][MediaAttr.MEDIA_IMAGE_URL]
                     )
+                    and media_image_url.startswith("data:")
                 ):
                     item["attributes"][MediaAttr.MEDIA_IMAGE_URL] = "data:***"
 
