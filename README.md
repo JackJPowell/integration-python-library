@@ -38,6 +38,43 @@ pip3 install ucapi
 
 See [examples directory](https://github.com/aitatoi/integration-python-library/blob/main/examples) for some minimal integration driver examples.
 
+### Web view entities
+
+`WebView` provides a web page definition for Remote firmware 2.14.0 and newer:
+
+```python
+from ucapi import WebView
+from ucapi.webview import AuthType, Options, UserAgent
+
+dashboard = WebView(
+    "dashboard-energy",
+    "Energy dashboard",
+    options={
+        Options.URL: "https://dashboard.example.com/energy?kiosk=1",
+        Options.AUTH: {"type": AuthType.BEARER, "token": dashboard_token},
+        Options.USER_AGENT: UserAgent.DESKTOP,
+        Options.ZOOM: 70,
+    },
+)
+api.available_entities.add(dashboard)
+```
+
+The library only includes web views in `available_entities` when the Remote explicitly
+reports `webview` in its supported entity types. Older firmware rejects the entire
+response if it contains a web view, so web views are also omitted when capability
+discovery fails.
+
+The Remote loads the page directly and executes web view commands in its UI;
+the integration does not need a command handler. Features and device classes are
+not supported. State is optional: omit `attributes` to let Core determine availability,
+or report server availability using `ucapi.webview.Attributes.STATE` and
+`ucapi.webview.States` through `api.configured_entities.update_attributes`.
+
+Options are dictionaries, including nested authentication, TLS, cookies and physical
+button mappings. Core validates them. Supply credentials through `auth` or `cookies`;
+the URL is not secret. See the [web view specification](https://github.com/unfoldedcircle/core-api/blob/feat/webview-entity/doc/entities/entity_webview.md)
+for all options and their restrictions.
+
 ### Environment Variables
 
 Certain features can be configured by environment variables:
